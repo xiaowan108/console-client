@@ -3421,6 +3421,8 @@ static int psync_fs_do_start(){
     fuse_opt_add_arg(&args, "-ononempty");
   }
   fuse_opt_add_arg(&args, "-ohard_remove");
+	//允許其他用戶寫入，防止其他程式無法寫入
+	 fuse_opt_add_arg(&args, "-oallow_others");
 //  fuse_opt_add_arg(&args, "-d");
 #endif
 
