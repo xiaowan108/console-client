@@ -2438,9 +2438,13 @@ static int psync_fs_unlink(const char *path){
   psync_sql_unlock();
 
   if ((fpath->flags & PSYNC_FOLDER_FLAG_BACKUP) && ret == 0) {
+    int *eventid;
+
     //Send async event to UI to notify the user that he is deleting a backedup file.
     debug(D_NOTICE, "Backedup file deleted in P drive. Send event. Flags: [%d]", fpath->flags);
-    psync_run_thread1("psync_async_sync_delete", psync_async_ui_callback, PEVENT_BKUP_F_DEL_DRIVE);
+    eventid = psync_new(int);
+    *eventid = PEVENT_BKUP_F_DEL_DRIVE;
+    psync_run_thread1("psync_async_ui_callback", psync_async_ui_callback, eventid);
   }
 
   psync_free(fpath);

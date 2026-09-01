@@ -431,7 +431,7 @@ int psync_cloud_crypto_get_hint(char **hint){
   return PSYNC_CRYPTO_HINT_SUCCESS;
 }
 
-static int crypto_keys_match(){
+static int crypto_keys_match(psync_rsa_publickey_t pubkey, psync_rsa_privatekey_t privkey){
   psync_symmetric_key_t key, deckey;
   psync_encrypted_symmetric_key_t enckey;
   int res;
@@ -439,13 +439,13 @@ static int crypto_keys_match(){
   key=(psync_symmetric_key_t)psync_malloc(offsetof(psync_symmetric_key_struct_t, key)+64);
   key->keylen=64;
   psync_ssl_rand_weak(key->key, key->keylen);
-  enckey=psync_ssl_rsa_encrypt_symmetric_key(crypto_pubkey, key);
+  enckey=psync_ssl_rsa_encrypt_symmetric_key(pubkey, key);
   if (enckey==PSYNC_INVALID_ENC_SYM_KEY){
     psync_free(key);
     return 0;
   }
 
-  deckey= psync_ssl_rsa_decrypt_symm_key_lock(crypto_privkey, enckey);
+  deckey=psync_ssl_rsa_decrypt_symm_key_lock(privkey, enckey);
 
   psync_free(enckey);
   if (deckey==PSYNC_INVALID_SYM_KEY){
@@ -558,7 +558,7 @@ retry:
     psync_free(salt);
     return PRINT_RETURN_CONST(PSYNC_CRYPTO_START_BAD_PASSWORD);
   }
-  if (!crypto_keys_match()){
+  if (!crypto_keys_match(crypto_pubkey, crypto_privkey)){
     psync_ssl_rsa_free_public(crypto_pubkey);
     crypto_pubkey=PSYNC_INVALID_RSA;
     psync_ssl_rsa_free_private(crypto_privkey);

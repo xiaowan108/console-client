@@ -9,6 +9,7 @@
 #include "plibs.h"
 #include "string.h"
 #include "stdlib.h"
+#include "stdio.h"
 #include "pnetlibs.h"
 
 #if defined(P_OS_WINDOWS)
@@ -28,7 +29,6 @@
 
 #if defined(P_OS_MACOSX)
 #include <unistd.h>
-#include <stdio.h>
 #endif
 
 /*************************************************************/
@@ -117,7 +117,7 @@ int create_backend_event(const char*  binapi,
   int pCnt = params->paramCnt; //Number of optional parameters
   int mpCnt = 6; //Number of mandatory params
   int tpCnt; //Total number of parameters
-  char* keyParams;
+  char* keyParams = NULL;
   char charBuff[30][258];
 
   sock = psync_api_connect(binapi, psync_setting_get_bool(0));
@@ -177,7 +177,7 @@ int create_backend_event(const char*  binapi,
       }
 
       if (params->Params[i].paramtype == 2) {
-        paramsLocal[mpCnt + i] = (binparam)P_BOOL(charBuff, params->Params[i].num);
+        paramsLocal[mpCnt + i] = (binparam)P_BOOL(charBuff[i], params->Params[i].num);
         continue;
       }
     }
@@ -192,7 +192,7 @@ int create_backend_event(const char*  binapi,
     }
 
     if (paramsLocal[i].paramtype == 1) {
-      debug(D_NOTICE, "%d: Number Param: [%s] - [%d]", i, paramsLocal[i].paramname, paramsLocal[i].num);
+      debug(D_NOTICE, "%d: Number Param: [%s] - [%"P_PRI_U64"]", i, paramsLocal[i].paramname, paramsLocal[i].num);
       continue;
     }
   }
@@ -221,9 +221,10 @@ int create_backend_event(const char*  binapi,
       *err = psync_strdup(psync_find_result(res, "error", PARAM_STR)->str);
     }
 
-    debug(D_CRITICAL, "Event command failed. Error:[%s]", *err);
+    debug(D_CRITICAL, "Event command failed. Error:[%s]", err ? *err : "Unknown error");
   }
 
+  psync_free(res);
   return result;
 }
 /*************************************************************/
@@ -241,7 +242,7 @@ int backend_call(const char*  binapi,
 
   binparam* localParams;
   binresult*    res;
-  binresult*    payload;
+  const binresult* payload;
   psync_socket* sock;
   uint64_t      result;
 
@@ -271,36 +272,24 @@ int backend_call(const char*  binapi,
   }
 
   //Add optional parameters to the structure
-  for (i = reqParCnt; i < totalParCnt; i++) {
-    int j = 0;
+  for (i = 0; i < optParCnt; i++) {
+    int paramIdx = reqParCnt + i;
 
     if (optionalParams->Params[i].paramtype == 0) {
-      localParams[i] = (binparam)P_STR(optionalParams->Params[j].paramname, optionalParams->Params[j].str);
+      localParams[paramIdx] = (binparam)P_STR(optionalParams->Params[i].paramname, optionalParams->Params[i].str);
 
       continue;
     }
 
     if (optionalParams->Params[i].paramtype == 1) {
-      localParams[i] = (binparam)P_NUM(optionalParams->Params[j].paramname, optionalParams->Params[j].num);
+      localParams[paramIdx] = (binparam)P_NUM(optionalParams->Params[i].paramname, optionalParams->Params[i].num);
 
       continue;
     }
 
     if (optionalParams->Params[i].paramtype == 2) {
-      localParams[i] = (binparam)P_BOOL(optionalParams->Params[j].paramname, optionalParams->Params[j].num);
+      localParams[paramIdx] = (binparam)P_BOOL(optionalParams->Params[i].paramname, optionalParams->Params[i].num);
 
-      continue;
-    }
-
-    j++;
-  }
-
-  for (i = 0; i <= totalParCnt; i++) {
-    if (localParams[i].paramtype == 0) {
-      continue;
-    }
-
-    if (localParams[i].paramtype == 1) {
       continue;
     }
   }
@@ -398,7 +387,7 @@ char* get_machine_name() {
   return psync_strdup(pcName);
 }
 /*************************************************************/
-void parse_os_path(char* path, folderPath* folders, char* delim, int mode) {
+void parse_os_path(const char* path, folderPath* folders, char delim, int mode) {
   char fName[255];
   char* buff;
   int i = 0, j = 0, k = 0;
@@ -411,9 +400,10 @@ void parse_os_path(char* path, folderPath* folders, char* delim, int mode) {
     if (path[i] != delim) {
       if ((path[i] == ':') && (mode == 1)) {
         //In case we meet a ":" as in C:\ we set the name to Drive + the string before the ":"
-        fName[k] = NULL;
-        buff = psync_strcat("Drive ", &fName, NULL);
+        fName[k] = 0;
+        buff = psync_strcat("Drive ", fName, NULL);
         psync_strlcpy(fName, buff, strlen(buff)+1);
+        psync_free(buff);
 
         k = k + strlen("Drive ");
       }
@@ -501,10 +491,11 @@ void send_psyncs_event(const char* binapi,
 /*************************************************************/
 int set_be_file_dates(uint64_t fileid, time_t ctime, time_t mtime) {
   int callRes;
-  char msgErr[1024];
-  binresult* retData;
+  char* msgErr = NULL;
+  binresult* retData = NULL;
 
-  debug(D_NOTICE, "Update file date in the backend. FileId: [%lld], ctime: [%lld], mtime: [%lld]", fileid, ctime, mtime);
+  debug(D_NOTICE, "Update file date in the backend. FileId: [%"P_PRI_U64"], ctime: [%lld], mtime: [%lld]",
+        fileid, (long long)ctime, (long long)mtime);
 
   eventParams optionalParams = {
     0
@@ -527,10 +518,14 @@ int set_be_file_dates(uint64_t fileid, time_t ctime, time_t mtime) {
     &requiredParams1,
     &optionalParams,
     &retData,
-    msgErr
+    &msgErr
   );
 
-  debug(D_NOTICE, "cTime res: [%d]", callRes);
+  debug(D_NOTICE, "cTime res: [%d], message: [%s]", callRes, msgErr ? msgErr : "");
+  psync_free(msgErr);
+  psync_free(retData);
+  msgErr = NULL;
+  retData = NULL;
 
   eventParams requiredParams = {
     5, {
@@ -549,10 +544,12 @@ int set_be_file_dates(uint64_t fileid, time_t ctime, time_t mtime) {
     &requiredParams,
     &optionalParams,
     &retData,
-    msgErr
+    &msgErr
   );
 
-  debug(D_NOTICE, "mTime res: [%d]", callRes);
+  debug(D_NOTICE, "mTime res: [%d], message: [%s]", callRes, msgErr ? msgErr : "");
+  psync_free(msgErr);
+  psync_free(retData);
 
   return callRes;
 }

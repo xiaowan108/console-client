@@ -34,6 +34,7 @@
 
 #define FOLDERID_ENTRY_SIZE 18
 
+static int process_bres(const char* cmd, binresult *bres, psync_socket *api, char **err);
 
 static void init_param_str(binparam* t, const char *name, const char *val) {
   //{PARAM_STR, strlen(name), strlen(val), (name), {(uint64_t)((uintptr_t)(val))}}
@@ -1475,7 +1476,7 @@ int do_change_bookmark(const char* code, int locationid, const char* name, const
   return result;
 }
 
-int process_bres(const char* cmd, binresult *bres, psync_socket *api, char **err)
+static int process_bres(const char* cmd, binresult *bres, psync_socket *api, char **err)
 {
 	const char *errorret;
 	int result;

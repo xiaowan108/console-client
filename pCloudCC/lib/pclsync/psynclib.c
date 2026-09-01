@@ -2867,8 +2867,10 @@ char* get_pc_name() {
 }
 /***********************************************************************************************************************************************/
 void psync_async_delete_sync(void* ptr) {
-  psync_syncid_t syncId = (psync_syncid_t*)ptr;
+  psync_syncid_t syncId = *(psync_syncid_t*)ptr;
   int res;
+
+  psync_free(ptr);
 
   res = psync_delete_sync(syncId);
 
@@ -2880,8 +2882,10 @@ void psync_async_delete_sync(void* ptr) {
 }
 /***********************************************************************************************************************************************/
 void psync_async_ui_callback(void* ptr) {
-  int eventId = (int*)ptr;
+  int eventId = *(int*)ptr;
   time_t currTime = psync_time();
+
+  psync_free(ptr);
 
   if (((currTime - lastBupDelEventTime) > bupNotifDelay) || (lastBupDelEventTime == 0)) {
     debug(D_NOTICE, "Send event to UI. Event id: [%d]", eventId);
@@ -2896,7 +2900,6 @@ int psync_delete_sync_by_folderid(psync_folderid_t fId) {
   psync_sql_res* sqlRes;
   psync_uint_row row;
 
-  psync_syncid_t* syncId;
   psync_syncid_t* syncIdT;
 
   sqlRes = psync_sql_query_nolock("SELECT id FROM syncfolder WHERE folderid = ?");
@@ -2910,12 +2913,10 @@ int psync_delete_sync_by_folderid(psync_folderid_t fId) {
     return -1;
   }
 
-  syncId = row[0];
-  
-  psync_sql_free_result(sqlRes);
-
   syncIdT = psync_new(psync_syncid_t);
-  syncIdT = syncId;
+  *syncIdT = row[0];
+
+  psync_sql_free_result(sqlRes);
 
   psync_run_thread1("psync_async_sync_delete", psync_async_delete_sync, syncIdT);
 

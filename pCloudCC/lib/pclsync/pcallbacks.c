@@ -435,18 +435,21 @@ void psync_send_eventdata(psync_eventtype_t eventid, void *eventdata){
 data_event_callback data_event_fptr = NULL;
 
 void psync_init_data_event(void *ptr) {
-  data_event_fptr = (data_event_callback*)ptr;
+  data_event_fptr = (data_event_callback)ptr;
   debug(D_NOTICE, "Data event handler set.");
 }
 /**********************************************************************************************/
 void data_event_thread(void* ptr) {
   event_data_struct* data = (event_data_struct*)ptr;
 
-  debug(D_NOTICE, "Sending data event Event id: [%d] Str1: [%s], Str1: [%s], Uint1:[%lu] Uint2:[%lu]", data->eventid, data->str1, data->str2, data->uint1, data->uint2);
+  debug(D_NOTICE, "Sending data event Event id: [%d] Str1: [%s], Str2: [%s], Uint1:[%"P_PRI_U64"] Uint2:[%"P_PRI_U64"]",
+        data->eventid, data->str1, data->str2, data->uint1, data->uint2);
 
   data_event_fptr(data->eventid, data->str1, data->str2, data->uint1, data->uint2);
 
-  psync_free(ptr);
+  psync_free(data->str1);
+  psync_free(data->str2);
+  psync_free(data);
 }
 /**********************************************************************************************/
 void psync_send_data_event(event_data_struct* data) {
@@ -468,6 +471,7 @@ void psync_send_data_event(event_data_struct* data) {
 }
 /**********************************************************************************************/
 void psync_data_event_test(int eventid, char* str1, char* str2, uint64_t uint1, uint64_t uint2) {
-  debug(D_NOTICE, "Test Data event callback. eventid [%d]. String1: [%s], String2: [%s], uInt1: [%ul] uInt2: [%ul]", eventid, str1, str2, uint1, uint2);
+  debug(D_NOTICE, "Test Data event callback. eventid [%d]. String1: [%s], String2: [%s], uInt1: [%"P_PRI_U64"] uInt2: [%"P_PRI_U64"]",
+        eventid, str1, str2, uint1, uint2);
 }
 /**********************************************************************************************/

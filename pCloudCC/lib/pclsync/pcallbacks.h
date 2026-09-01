@@ -38,8 +38,8 @@ typedef void(/*_cdecl*/__stdcall *data_event_callback)(int eventId, char* str1, 
 
 typedef struct {
   int eventid;
-  const char *str1;
-  const char* str2;
+  char*      str1;
+  char*      str2;
   uint64_t   uint1;
   uint64_t   uint2;
 } event_data_struct;

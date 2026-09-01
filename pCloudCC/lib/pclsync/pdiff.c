@@ -677,6 +677,7 @@ static psync_socket *get_connected_socket(){
     if (isFirstLogin) {
       debug(D_NOTICE, "This is a first login. Send the FIRST_LOGIN event. Token:[%s], User id: [%lu]", psync_my_auth, (unsigned long)userid);
       time_t rawtime;
+      char *eventError = NULL;
       time(&rawtime);
 
       char* macAddr;
@@ -697,7 +698,12 @@ static psync_socket *get_connected_socket(){
         P_OS_ID,
         rawtime,
         &params,
-        res);
+        &eventError);
+
+      debug(D_NOTICE, "First login event result: [%d], message: [%s].",
+            intRes, eventError ? eventError : "");
+      psync_free(eventError);
+      psync_free(macAddr);
     }
     else {
       debug(D_NOTICE, "Not a first login. Run sync event.");
