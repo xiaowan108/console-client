@@ -1,0 +1,11 @@
+/home/xiaowan/tmp/console-client/pCloudCC/CMakeFiles/pclsync.dir
+/home/xiaowan/tmp/console-client/pCloudCC/CMakeFiles/mbedtls.dir
+/home/xiaowan/tmp/console-client/pCloudCC/CMakeFiles/sqlite3.dir
+/home/xiaowan/tmp/console-client/pCloudCC/CMakeFiles/pcloudcc_lib.dir
+/home/xiaowan/tmp/console-client/pCloudCC/CMakeFiles/pcloudcc.dir
+/home/xiaowan/tmp/console-client/pCloudCC/CMakeFiles/edit_cache.dir
+/home/xiaowan/tmp/console-client/pCloudCC/CMakeFiles/rebuild_cache.dir
+/home/xiaowan/tmp/console-client/pCloudCC/CMakeFiles/list_install_components.dir
+/home/xiaowan/tmp/console-client/pCloudCC/CMakeFiles/install.dir
+/home/xiaowan/tmp/console-client/pCloudCC/CMakeFiles/install/local.dir
+/home/xiaowan/tmp/console-client/pCloudCC/CMakeFiles/install/strip.dir

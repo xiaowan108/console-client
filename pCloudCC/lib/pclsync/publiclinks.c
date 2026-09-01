@@ -25,6 +25,8 @@
  */
 #include "plibs.h"
 #include "publiclinks.h"
+int process_bres(const char *cmd, binresult *bres, psync_socket *api, char **err);
+
 #include "papi.h"
 #include "pnetlibs.h"
 #include "pfsfolder.h"
